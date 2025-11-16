@@ -1,0 +1,43 @@
+services:
+  backend:
+    build: ./backend
+    container_name: note-pilot-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ~/Desktop/Vaults:/vaults:rw          # Mount all your vaults here
+      - ./logs:/app/logs:rw          # Optional: local logs
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1           # Ensures real-time logging
+      - PYTHONPATH=/app
+      - OLLAMA_HOST=http://ollama:11434
+      - OLLAMA_MODEL=gemma2:2b
+    depends_on:
+      - ollama
+    networks:
+      - note_pilot_net
+    healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+        start_period: 10s
+        interval: 100s
+        timeout: 10s
+        retries: 3
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: note-pilot-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"  # optional, if you want to test via curl locally
+    volumes:
+      - ollama_models:/root/.ollama  # persistent model cache
+    networks:
+      - note_pilot_net
+
+networks:
+  note_pilot_net:
+
+volumes:
+  ollama_models:
